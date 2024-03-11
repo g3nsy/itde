@@ -11,7 +11,7 @@ long_description = (here / "README.md").read_text()
 
 setup(
     name="itde",
-    version="1.2.1",
+    version="1.2.2",
     description="InnerTube Data Extractor",
     long_description=long_description,
     long_description_content_type="text/markdown",
