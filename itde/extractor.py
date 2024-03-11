@@ -46,7 +46,6 @@ from .ytypes import ItemStructType
 from .ytypes import ShelfStructType
 from .ytypes import ResultStructType
 from .ytypes import EndpointType
-from .ytypes import ShelfType
 from .ytypes import ItemType
 
 
@@ -59,13 +58,15 @@ def handle(function: Callable) -> Callable:
             return function(*args, **kwargs)
         except (KeyError, IndexError, TypeError, ValueError, ITDEError) as error:
 
-            log.error(
+            log.debug(
                 "An error occured during the data extraction process. "
                 "Please open an issue at https://github.com/g3nsy/itde/issues"
             )
 
             raise ITDEError(
-                "An error occured during the data extraction process. "
+                "An error occured during the data extraction process: "
+                f"{error.__class__.__name__}: "
+                f"{error.args[0]}"
             ) from error
 
     return inner_function
@@ -144,25 +145,17 @@ def _extract_contents(data: Dict) -> Optional[Union[Dict, List]]:
 
     elif ResultStructType.TABBED_SEARCH_RESULTS.value in data["contents"]:
         contents = data["contents"]["tabbedSearchResultsRenderer"]["tabs"][0][
-            "tabRenderer"
-        ]["content"]["sectionListRenderer"]["contents"]
+            "tabRenderer"]["content"]["sectionListRenderer"]["contents"]
 
-    elif (
-        ResultStructType.SINGLE_COLUMN_MUSIC_WATCH_NEXT_RESULT.value in data["contents"]
-    ):
-        contents = [
-            data["contents"][
-                ResultStructType.SINGLE_COLUMN_MUSIC_WATCH_NEXT_RESULT.value
-            ]["tabbedRenderer"]["watchNextTabbedResultsRenderer"]["tabs"][0][
-                "tabRenderer"
-            ][
-                "content"
-            ][
-                "musicQueueRenderer"
-            ][
-                "content"
+    elif ResultStructType.SINGLE_COLUMN_MUSIC_WATCH_NEXT_RESULT.value in data["contents"]:
+        try:
+            contents = [
+                data["contents"][ResultStructType.SINGLE_COLUMN_MUSIC_WATCH_NEXT_RESULT.value][
+                    "tabbedRenderer"]["watchNextTabbedResultsRenderer"]["tabs"][0][
+                    "tabRenderer"]["content"]["musicQueueRenderer"]["content"]
             ]
-        ]
+        except KeyError:
+            contents = None
 
     else:
         raise KeyNotFound(data["contents"].keys())
@@ -174,20 +167,21 @@ def _extract_shelf(entry: Dict) -> Optional[Shelf]:
     if ShelfStructType.MUSIC_SHELF.value in entry:
         key = ShelfStructType.MUSIC_SHELF.value
         try:
-            type = ShelfType(entry[key]["title"]["runs"][0]["text"])
+            name = entry[key]["title"]["runs"][0]["text"]
+        except KeyError:
+            name = None
+        try:
             endpoint = _extract_endpoint(data=entry[key]["bottomEndpoint"])
-        except (KeyError, TypeError):
-            type = None
+        except KeyError:
             endpoint = None
         entry_contents = entry[key]["contents"]
         try:
-            continuation = entry[key]["continuations"][0]["nextContinuationData"][
-                "continuation"
-            ]
+            continuation = entry[key]["continuations"][0][
+                "nextContinuationData"]["continuation"]
         except (IndexError, KeyError):
             continuation = None
         shelf = Shelf(
-            type=type,
+            name=name,
             endpoint=endpoint,
             continuation=continuation,
         )
@@ -195,11 +189,8 @@ def _extract_shelf(entry: Dict) -> Optional[Shelf]:
     elif ShelfStructType.MUSIC_CAROUSEL_SHELF.value in entry:
         key = ShelfStructType.MUSIC_CAROUSEL_SHELF.value
         entry_contents = entry[key]["contents"]
-        type = ShelfType(
-            entry[key]["header"]["musicCarouselShelfBasicHeaderRenderer"]["title"][
-                "runs"
-            ][0]["text"]
-        )
+        name = entry[key]["header"]["musicCarouselShelfBasicHeaderRenderer"][
+            "title"]["runs"][0]["text"]
         try:
             endpoint = _extract_endpoint(
                 data=entry[key]["header"]["musicCarouselShelfBasicHeaderRenderer"][
@@ -208,7 +199,11 @@ def _extract_shelf(entry: Dict) -> Optional[Shelf]:
             )
         except KeyError:
             endpoint = None
-        shelf = Shelf(type=type, endpoint=endpoint, continuation=None)
+        shelf = Shelf(
+            name=name, 
+            endpoint=endpoint, 
+            continuation=None
+        )
 
     elif ShelfStructType.MUSIC_CARD_SHELF.value in entry:
         key = ShelfStructType.MUSIC_CARD_SHELF.value
@@ -222,12 +217,12 @@ def _extract_shelf(entry: Dict) -> Optional[Shelf]:
     elif ShelfStructType.PLAYLIST_PANEL.value in entry:
         key = ShelfStructType.PLAYLIST_PANEL.value
         name = entry[key].get("title", None)
-        try:
-            type = ShelfType(name)
-        except (TypeError, ValueError):
-            type = None
         entry_contents = entry[key]["contents"]
-        shelf = Shelf(type=type, name=name, endpoint=None, continuation=None)  # TODO
+        shelf = Shelf(
+            name=name, 
+            endpoint=None, 
+            continuation=None
+        )
 
     elif ShelfStructType.GRID.value in entry:
         key = ShelfStructType.GRID.value
@@ -242,7 +237,7 @@ def _extract_shelf(entry: Dict) -> Optional[Shelf]:
     else:
         raise KeyNotFound(entry.keys())
 
-    item_type = get_item_type(shelf.type) if shelf.type else None
+    item_type = get_item_type(shelf.name) if shelf.name else None
     for entry_item in entry_contents:
         item = _extract_item(entry_item, item_type)
         if item:
@@ -343,23 +338,19 @@ def _extract_item(entry_item: Dict, type: Optional[ItemType] = None) -> Optional
         key = ItemStructType.MUSIC_RESPONSIVE_LIST_ITEM.value
         try:
             thumbnail_url = entry_item[key]["thumbnail"]["musicThumbnailRenderer"][
-                "thumbnail"
-            ]["thumbnails"][-1]["url"]
+                "thumbnail"]["thumbnails"][-1]["url"]
         except KeyError:
             thumbnail_url = None
         name = entry_item[key]["flexColumns"][0][
-            "musicResponsiveListItemFlexColumnRenderer"
-        ]["text"]["runs"][0]["text"]
+            "musicResponsiveListItemFlexColumnRenderer"]["text"]["runs"][0]["text"]
         if type is None:
             try:
                 type = ItemType(
                     entry_item[key]["flexColumns"][1][
-                        "musicResponsiveListItemFlexColumnRenderer"
-                    ]["text"]["runs"][0]["text"]
+                        "musicResponsiveListItemFlexColumnRenderer"]["text"][
+                            "runs"][0]["text"]
                 )
             except (KeyError, ValueError):
-                # It appears that 'Song' items
-                # do not have 'Song' in the subtitle
                 type = ItemType.SONG
 
         match type:
@@ -536,7 +527,9 @@ def _extract_item(entry_item: Dict, type: Optional[ItemType] = None) -> Optional
             case ItemType.EP:
                 endpoint = _extract_endpoint(data=entry_item[key]["navigationEndpoint"])
                 item = EPItem(
-                    name=name, endpoint=endpoint, thumbnail_url=thumbnail_url
+                    name=name, 
+                    endpoint=endpoint, 
+                    thumbnail_url=thumbnail_url,
                 )
 
             case _:
@@ -554,7 +547,7 @@ def _extract_item(entry_item: Dict, type: Optional[ItemType] = None) -> Optional
             try:
                 type = ItemType(entry_item[key]["subtitle"]["runs"][0]["text"])
             except ValueError:
-                type = ItemType.SINGLE
+                type = None
 
         match type:
 
@@ -636,7 +629,11 @@ def _extract_item(entry_item: Dict, type: Optional[ItemType] = None) -> Optional
                 raise UnexpectedState(type)
 
             case _:
-                raise UnregisteredItemType(type)
+                item = Item(
+                    name=name,
+                    endpoint=endpoint,
+                    thumbnail_url=thumbnail_url,
+                )
 
     elif ItemStructType.PLAYLIST_PANEL_VIDEO.value in entry_item:
         key = ItemStructType.PLAYLIST_PANEL_VIDEO.value

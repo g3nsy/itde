@@ -39,29 +39,6 @@ class ItemStructType(Enum):
     MESSAGE = "messageRenderer"
 
 
-class ShelfType(Enum):
-    TOP_RESULT = "Top result"
-    SONG = "Song"
-    VIDEO = "Video"
-    PLAYLIST = "Playlist"
-    ALBUM = "Album"
-    ARTIST = "Artist"
-    EPISODE = "Episode"
-    SONGS = "Songs"
-    VIDEOS = "Videos"
-    COMMUNITY_PLAYLIST = "Community playlists"
-    FEATURED_PLAYLIST = "Featured playlists"
-    ALBUMS = "Albums"
-    ARTISTS = "Artists"
-    SINGLES = "Singles"
-    EPISODES = "Episodes"
-    PODCASTS = "Podcasts"
-    PROFILES = "Profiles"
-    FEATURED_ON = "Featured on"
-    FANS_MIGHT_ALSO_LIKE = "Fans might also like"
-    OTHER_VERSIONS = "Other versions"
-
-
 class ItemType(Enum):
     SONG = "Song"
     SINGLE = "Single"

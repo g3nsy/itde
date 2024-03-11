@@ -24,13 +24,11 @@ from .exceptions import KeyNotFound
 from .exceptions import EndpointNotFound
 from .exceptions import UnregisteredElement
 from .exceptions import UnregisteredItemType
-from .exceptions import UnregisteredShelfType
 from .exceptions import UnregisteredHeaderType
 from .exceptions import ITDEError
 
 from .ytypes import ItemType
 from .ytypes import EndpointType
-from .ytypes import ShelfType
 from .ytypes import ItemStructType
 from .ytypes import ShelfStructType
 from .ytypes import ContinuationStrucType
@@ -59,12 +57,10 @@ __all__ = [
     "EndpointNotFound",
     "UnregisteredElement",
     "UnregisteredItemType",
-    "UnregisteredShelfType",
     "UnregisteredHeaderType",
     "ITDEError",
     "ItemType",
     "EndpointType",
-    "ShelfType",
     "ItemStructType",
     "ShelfStructType",
     "ContinuationStrucType",

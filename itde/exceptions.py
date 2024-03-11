@@ -18,10 +18,6 @@ class UnregisteredElement(ITDEError):
     """ """
 
 
-class UnregisteredShelfType(UnregisteredElement):
-    """ """
-
-
 class UnregisteredHeaderType(UnregisteredElement):
     """ """
 

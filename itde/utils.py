@@ -3,9 +3,7 @@ from typing import Callable
 from typing import Optional
 from datetime import time
 from datetime import date
-from .ytypes import ShelfType
 from .ytypes import ItemType
-from .exceptions import UnregisteredShelfType
 from .exceptions import UnexpectedState
 
 
@@ -94,43 +92,29 @@ def convert_month(month: str) -> int:
             raise ValueError("Unexpected month: {month}")
 
 
-def get_item_type(shelf_type: ShelfType) -> Optional[ItemType]:
-    match shelf_type:
+def get_item_type(shelf_name: str) -> Optional[ItemType]:
+    if match("song", shelf_name):
+        return ItemType.SONG
+    if match("single", shelf_name):
+        return ItemType.SINGLE
+    if match("video", shelf_name):
+        return ItemType.VIDEO
+    if match("playlist", shelf_name):
+        return ItemType.PLAYLIST
+    if match("album", shelf_name): 
+        return ItemType.ALBUM
+    if match("artist", shelf_name):
+        return ItemType.ARTIST
+    if match("episode", shelf_name):
+        return ItemType.EPISODE
+    if match("profile", shelf_name):
+        return ItemType.PROFILE
+    if match("podcast", shelf_name):
+        return ItemType.PODCAST
+    if match("ep", shelf_name):
+        return ItemType.EP
+    return None
 
-        case ShelfType.SONG | ShelfType.SONGS:
-            return ItemType.SONG
 
-        case ShelfType.SINGLES:
-            return ItemType.SINGLE
-
-        case ShelfType.VIDEO | ShelfType.VIDEOS:
-            return ItemType.VIDEO
-
-        case (
-            ShelfType.FEATURED_PLAYLIST
-            | ShelfType.COMMUNITY_PLAYLIST
-            | ShelfType.PLAYLIST
-            | ShelfType.FEATURED_ON
-        ):
-            return ItemType.PLAYLIST
-
-        case ShelfType.ALBUM | ShelfType.ALBUMS:
-            return ItemType.ALBUM
-
-        case ShelfType.ARTIST | ShelfType.ARTISTS | ShelfType.FANS_MIGHT_ALSO_LIKE:
-            return ItemType.ARTIST
-
-        case ShelfType.EPISODE | ShelfType.EPISODES:
-            return ItemType.EPISODE
-
-        case ShelfType.PROFILES:
-            return ItemType.PROFILE
-
-        case ShelfType.PODCASTS:
-            return ItemType.PODCAST
-
-        case ShelfType.TOP_RESULT | ShelfType.OTHER_VERSIONS:
-            return None
-
-        case _:
-            raise UnregisteredShelfType(shelf_type)
+def match(seq: str, title:  str) -> bool:
+    return re.search(seq, title, re.IGNORECASE) is not None
