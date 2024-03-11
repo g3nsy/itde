@@ -1,0 +1,110 @@
+{
+  "sear": [
+    {
+      "name": "test_1",
+      "query": "Squarepusher",
+      "params": "",
+      "continuation": ""
+    },
+    {
+      "name": "test_2",
+      "query": "Aphex Twin",
+      "params": "",
+      "continuation": ""
+    },
+    {
+      "name": "test_3",
+      "query": "Rioji Ikeda",
+      "params": "",
+      "continuation": ""
+    },
+    {
+      "name": "test_4",
+      "query": "qwerty",
+      "params": "",
+      "continuation": ""
+    }
+  ],
+
+  "brow": [
+    {
+      "name": "test_1",
+      "browse_id": "",
+      "params": "",
+      "continuation": ""
+    },
+    {
+      "name": "test_2",
+      "browse_id": "",
+      "params": "",
+      "continuation": ""
+    },
+    {
+      "name": "test_3",
+      "browse_id": "",
+      "params": "",
+      "continuation": ""
+    },
+    {
+      "name": "test_4",
+      "browse_id": "",
+      "params": "",
+      "continuation": ""
+    }
+  ],
+
+  "next": [
+    {
+      "name": "test_1",
+      "video_id": "",
+      "playlist_id": "",
+      "params": "",
+      "index": null,
+      "continuation": ""
+    },
+    {
+      "name": "test_2",
+      "video_id": "",
+      "playlist_id": "",
+      "params": "",
+      "index": null,
+      "continuation": ""
+    },
+    {
+      "name": "test_3",
+      "video_id": "",
+      "playlist_id": "",
+      "params": "",
+      "index": null,
+      "continuation": ""
+    },
+    {
+      "name": "test_4",
+      "video_id": "",
+      "playlist_id": "",
+      "params": "",
+      "index": null,
+      "continuation": ""
+    }
+  ],
+
+  "cont": [
+    {
+      "name": "test_1",
+      "continuation": ""
+    },
+    {
+      "name": "test_2",
+      "continuation": ""
+    },
+    {
+      "name": "test_3",
+      "continuation": ""
+    },
+    {
+      "name": "test_4",
+      "continuation": ""
+    }
+  ]
+
+}
