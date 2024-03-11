@@ -2,13 +2,14 @@
 import os
 import json
 import sys
+import shutil
 import traceback
 from enum import Enum
 from httpx import ConnectError
 from innertube import InnerTube
 from innertube.errors import RequestError
 from typing import Dict
-from typing import Callable 
+from typing import Callable
 from typing import List
 from typing import Optional
 
@@ -23,6 +24,12 @@ from itde import Container  # noqa
 from itde import ITDEError  # noqa
 
 
+if os.path.exists(TEST_ERRS):
+    shutil.rmtree(path=TEST_ERRS)
+
+os.mkdir(path=TEST_ERRS)
+
+
 class TestExtractor:
 
     def __init__(self) -> None:
@@ -30,7 +37,7 @@ class TestExtractor:
         self.tlog: List[str] = []
         self.ext_data: Dict[str, Optional[Container]] = {}
 
-        with open(TEST_DATA, mode='r') as file:
+        with open(TEST_DATA, mode="r") as file:
             test_data = json.loads(file.read())
         self.__test_sear = test_data["sear"]
         self.__test_brow = test_data["brow"]
@@ -45,8 +52,8 @@ class TestExtractor:
                     params=test["params"],
                     continuation=test["continuation"],
                 ),
-                test_type="sear", 
-                test_name=test["name"], 
+                test_type="sear",
+                test_name=test["name"],
             )
 
     def test_browse(self) -> None:
@@ -57,8 +64,8 @@ class TestExtractor:
                     params=test["params"],
                     continuation=test["continuation"],
                 ),
-                test_type="brow", 
-                test_name=test["name"], 
+                test_type="brow",
+                test_name=test["name"],
             )
 
     def test_next(self) -> None:
@@ -83,8 +90,9 @@ class TestExtractor:
     #             continuation=test["continuation"],
     #         )
 
-
-    def __do_test_wrapper(self, func: Callable, test_type: str, test_name: str) -> Optional[Container]:
+    def __do_test_wrapper(
+        self, func: Callable, test_type: str, test_name: str
+    ) -> Optional[Container]:
         name = f"{test_type}_{test_name}"
         try:
             innertube_data = func()
@@ -102,21 +110,21 @@ class TestExtractor:
 
 
 class Color(Enum):
-    GREEN = '\033[92m'
-    LIGTH_GREEN = '\033[1;92m'
-    RED = '\033[91m'
-    YELLOW = '\033[93m'
-    BLUE = '\033[1;34m'
-    MAGENTA = '\033[1;35m'
-    BOLD = '\033[;1m'
-    CYAN = '\033[1;36m'
-    LIGHT_CYAN = '\033[1;96m'
-    LIGTH_GREY = '\033[1;37m'
-    DARK_GREY = '\033[1;90m'
-    BLACK = '\033[1;30m'
-    WHITE = '\033[1;97m'
-    INVERTE = '\033[;7m'
-    RESET = '\033[0m'
+    GREEN = "\033[92m"
+    LIGTH_GREEN = "\033[1;92m"
+    RED = "\033[91m"
+    YELLOW = "\033[93m"
+    BLUE = "\033[1;34m"
+    MAGENTA = "\033[1;35m"
+    BOLD = "\033[;1m"
+    CYAN = "\033[1;36m"
+    LIGHT_CYAN = "\033[1;96m"
+    LIGTH_GREY = "\033[1;37m"
+    DARK_GREY = "\033[1;90m"
+    BLACK = "\033[1;30m"
+    WHITE = "\033[1;97m"
+    INVERTE = "\033[;7m"
+    RESET = "\033[0m"
 
     def __str__(self) -> str:
         return self.value
@@ -128,7 +136,6 @@ def main():
     test_extractor.test_browse()
     test_extractor.test_next()
 
-    print("--------------------")
     for name, ext_data in test_extractor.ext_data.items():
         print()
         print(f"{Color.BLUE}{name}{Color.RESET}")

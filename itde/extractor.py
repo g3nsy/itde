@@ -498,13 +498,10 @@ def _extract_item(entry_item: Dict, type: Optional[ItemType] = None) -> Optional
                 endpoint = _extract_endpoint(
                     data=entry_item[key]["flexColumns"][0][
                         "musicResponsiveListItemFlexColumnRenderer"
-                    ]["text"]["runs"][-1]["navigationEndpoint"]
+                        ]["text"]["runs"][-1]["navigationEndpoint"]
                 )
                 item = EpisodeItem(
-                    name=name,
-                    endpoint=endpoint,
-                    thumbnail_url=thumbnail_url,
-                    publication_date=None,
+                    name=name, endpoint=endpoint, thumbnail_url=thumbnail_url,
                 )
 
             case ItemType.PODCAST:
@@ -516,20 +513,15 @@ def _extract_item(entry_item: Dict, type: Optional[ItemType] = None) -> Optional
             case ItemType.PROFILE:
                 item_handle = entry_item[key]["flexColumns"][1][
                     "musicResponsiveListItemFlexColumnRenderer"
-                ]["text"]["runs"][-1]["text"]
+                    ]["text"]["runs"][-1]["text"]
                 item = ProfileItem(
-                    name=name,
-                    endpoint=None,
-                    thumbnail_url=thumbnail_url,
-                    handle=item_handle,
+                    name=name, thumbnail_url=thumbnail_url, handle=item_handle,
                 )
 
             case ItemType.EP:
                 endpoint = _extract_endpoint(data=entry_item[key]["navigationEndpoint"])
                 item = EPItem(
-                    name=name, 
-                    endpoint=endpoint, 
-                    thumbnail_url=thumbnail_url,
+                    name=name, endpoint=endpoint, thumbnail_url=thumbnail_url,
                 )
 
             case _:
@@ -538,8 +530,7 @@ def _extract_item(entry_item: Dict, type: Optional[ItemType] = None) -> Optional
     elif ItemStructType.MUSIC_TWO_ROW_ITEM.value in entry_item:
         key = ItemStructType.MUSIC_TWO_ROW_ITEM.value
         thumbnail_url = entry_item[key]["thumbnailRenderer"]["musicThumbnailRenderer"][
-            "thumbnail"
-        ]["thumbnails"][-1]["url"]
+            "thumbnail"]["thumbnails"][-1]["url"]
         name = entry_item[key]["title"]["runs"][0]["text"]
         endpoint = _extract_endpoint(data=entry_item[key]["navigationEndpoint"])
 
@@ -575,12 +566,14 @@ def _extract_item(entry_item: Dict, type: Optional[ItemType] = None) -> Optional
                 )
 
             case ItemType.EP:
-                release_year = int(entry_item[key]["subtitle"]["runs"][-1]["text"])
+                try:
+                    release_year = int(entry_item[key]["subtitle"]["runs"][-1]["text"])
+                except ValueError:
+                    release_year = None
                 item = EPItem(
                     name=name,
                     endpoint=endpoint,
                     thumbnail_url=thumbnail_url,
-                    artist_items=None,
                     release_year=release_year,
                 )
 
@@ -590,17 +583,12 @@ def _extract_item(entry_item: Dict, type: Optional[ItemType] = None) -> Optional
                     name=name,
                     endpoint=endpoint,
                     thumbnail_url=thumbnail_url,
-                    length=None,
                     views=views,
                 )
 
             case ItemType.PLAYLIST:
                 item = PlaylistItem(
-                    name=name,
-                    endpoint=endpoint,
-                    thumbnail_url=thumbnail_url,
-                    length=None,
-                    views=None,
+                    name=name, endpoint=endpoint, thumbnail_url=thumbnail_url,
                 )
 
             case ItemType.SINGLE:
@@ -617,12 +605,7 @@ def _extract_item(entry_item: Dict, type: Optional[ItemType] = None) -> Optional
 
             case ItemType.SONG:
                 item = SongItem(
-                    name=name,
-                    endpoint=endpoint,
-                    thumbnail_url=thumbnail_url,
-                    length=None,
-                    reproductions=None,
-                    album_item=None,
+                    name=name, endpoint=endpoint, thumbnail_url=thumbnail_url,
                 )
 
             case ItemType.EPISODE | ItemType.PODCAST | ItemType.PROFILE:
@@ -630,9 +613,7 @@ def _extract_item(entry_item: Dict, type: Optional[ItemType] = None) -> Optional
 
             case _:
                 item = Item(
-                    name=name,
-                    endpoint=endpoint,
-                    thumbnail_url=thumbnail_url,
+                    name=name, endpoint=endpoint, thumbnail_url=thumbnail_url,
                 )
 
     elif ItemStructType.PLAYLIST_PANEL_VIDEO.value in entry_item:
@@ -679,11 +660,9 @@ def _extract_item(entry_item: Dict, type: Optional[ItemType] = None) -> Optional
             name=entry_item[key]["title"]["runs"][0]["text"],
             description=description,
             thumbnail_url=entry_item[key]["thumbnail"]["musicThumbnailRenderer"][
-                "thumbnail"
-            ]["thumbnails"][-1]["url"],
+                "thumbnail"]["thumbnails"][-1]["url"],
             subscribers=entry_item[key]["subscriptionButton"][
-                "subscribeButtonRenderer"
-            ]["subscriberCountText"]["runs"][0]["text"],
+                "subscribeButtonRenderer"]["subscriberCountText"]["runs"][0]["text"],
             endpoint=None,
         )
 
@@ -692,8 +671,7 @@ def _extract_item(entry_item: Dict, type: Optional[ItemType] = None) -> Optional
         type = ItemType(entry_item[key]["subtitle"]["runs"][0]["text"])
         name = entry_item[key]["title"]["runs"][0]["text"]
         thumbnail_url = entry_item[key]["thumbnail"]["croppedSquareThumbnailRenderer"][
-            "thumbnail"
-        ]["thumbnails"][-1]["url"]
+            "thumbnail"]["thumbnails"][-1]["url"]
         release_year = int(entry_item[key]["subtitle"]["runs"][-1]["text"])
         if type is ItemType.PLAYLIST:
             tracks_num = entry_item[key]["secondSubtitle"]["runs"][2]["text"]
@@ -750,8 +728,7 @@ def _extract_item(entry_item: Dict, type: Optional[ItemType] = None) -> Optional
         name = entry_item[key]["title"]["runs"][-1]["text"]
         # TODO foreground thumbnail !?
         thumbnail_url = entry_item[key]["thumbnail"]["musicThumbnailRenderer"][
-            "thumbnail"
-        ]["thumbnails"][-1]["url"]
+            "thumbnail"]["thumbnails"][-1]["url"]
         item = Item(
             name=name,
             thumbnail_url=thumbnail_url,
@@ -761,8 +738,7 @@ def _extract_item(entry_item: Dict, type: Optional[ItemType] = None) -> Optional
         key = ItemStructType.MUSIC_MULTI_ROW_LIST_ITEM.value
         name = entry_item[key]["title"]["runs"][0]["text"]
         thumbnail_url = entry_item[key]["thumbnail"]["musicThumbnailRenderer"][
-            "thumbnail"
-        ]["thumbnails"][-1]["url"]
+            "thumbnail"]["thumbnails"][-1]["url"]
         endpoint = _extract_endpoint(
             entry_item[key]["title"]["runs"][0]["navigationEndpoint"]
         )
