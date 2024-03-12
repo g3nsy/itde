@@ -21,12 +21,9 @@ def handle(function: Callable) -> Callable:
 
 @handle
 def convert_number(string: str) -> int:
-
-    match = re.search(r"(\d+\.\d+|\d+)([BMK])?", string)
-
-    result = match.group() if match else ""
+    _match = re.search(r"(\d+\.\d+|\d+)([BMK])?", string)
+    result = _match.group() if _match else ""
     last_char = result[-1]
-
     if last_char.isupper():
         number = float(result[:-1])
         match last_char:
@@ -101,7 +98,7 @@ def get_item_type(shelf_name: str) -> Optional[ItemType]:
         return ItemType.VIDEO
     if match("playlist", shelf_name):
         return ItemType.PLAYLIST
-    if match("album", shelf_name): 
+    if match("album", shelf_name):
         return ItemType.ALBUM
     if match("artist", shelf_name):
         return ItemType.ARTIST
@@ -116,5 +113,5 @@ def get_item_type(shelf_name: str) -> Optional[ItemType]:
     return None
 
 
-def match(seq: str, title:  str) -> bool:
+def match(seq: str, title: str) -> bool:
     return re.search(seq, title, re.IGNORECASE) is not None
