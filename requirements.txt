@@ -1,3 +1,4 @@
 innertube~=2.1.10
 setuptools~=69.0.2
 rich~=13.7.0
+httpx~=0.23.3
