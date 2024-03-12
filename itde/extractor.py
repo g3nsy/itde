@@ -59,12 +59,12 @@ def handle(function: Callable) -> Callable:
         except (KeyError, IndexError, TypeError, ValueError, ITDEError) as error:
 
             log.debug(
-                "An error occured during the data extraction process. "
+                "An error occurred during the data extraction process. "
                 "Please open an issue at https://github.com/g3nsy/itde/issues"
             )
 
             raise ITDEError(
-                "An error occured during the data extraction process: "
+                "An error occurred during the data extraction process: "
                 f"{error.__class__.__name__}: "
                 f"{error.args[0]}"
             ) from error
@@ -246,10 +246,10 @@ def _extract_shelf(entry: Dict) -> Optional[Shelf]:
     return shelf
 
 
-def _extract_item(entry_item: Dict, type: Optional[ItemType] = None) -> Optional[Item]:
+def _extract_item(entry_item: Dict, item_type: Optional[ItemType] = None) -> Optional[Item]:
     if ShelfStructType.MUSIC_CARD_SHELF.value in entry_item:
         key = ShelfStructType.MUSIC_CARD_SHELF.value
-        type = ItemType(entry_item[key]["subtitle"]["runs"][0]["text"])
+        item_type = ItemType(entry_item[key]["subtitle"]["runs"][0]["text"])
         name = entry_item[key]["title"]["runs"][0]["text"]
         endpoint = _extract_endpoint(
             entry_item[key]["title"]["runs"][0]["navigationEndpoint"]
@@ -258,7 +258,7 @@ def _extract_item(entry_item: Dict, type: Optional[ItemType] = None) -> Optional
             "thumbnail"
         ]["thumbnails"][-1]["url"]
 
-        match type:
+        match item_type:
             case ItemType.ALBUM:
                 item = AlbumItem(
                     # artist_items in entry[key]['subtitle'][1:]
@@ -332,7 +332,7 @@ def _extract_item(entry_item: Dict, type: Optional[ItemType] = None) -> Optional
                 )
 
             case _:
-                raise UnregisteredItemType(type)
+                raise UnregisteredItemType(item_type)
 
     elif ItemStructType.MUSIC_RESPONSIVE_LIST_ITEM.value in entry_item:
         key = ItemStructType.MUSIC_RESPONSIVE_LIST_ITEM.value
@@ -343,17 +343,17 @@ def _extract_item(entry_item: Dict, type: Optional[ItemType] = None) -> Optional
             thumbnail_url = None
         name = entry_item[key]["flexColumns"][0][
             "musicResponsiveListItemFlexColumnRenderer"]["text"]["runs"][0]["text"]
-        if type is None:
+        if item_type is None:
             try:
-                type = ItemType(
+                item_type = ItemType(
                     entry_item[key]["flexColumns"][1][
                         "musicResponsiveListItemFlexColumnRenderer"]["text"][
                             "runs"][0]["text"]
                 )
             except (KeyError, ValueError):
-                type = ItemType.SONG
+                item_type = ItemType.SONG
 
-        match type:
+        match item_type:
 
             case ItemType.ARTIST:
                 try:
@@ -525,7 +525,7 @@ def _extract_item(entry_item: Dict, type: Optional[ItemType] = None) -> Optional
                 )
 
             case _:
-                raise UnregisteredItemType(type)
+                raise UnregisteredItemType(item_type)
 
     elif ItemStructType.MUSIC_TWO_ROW_ITEM.value in entry_item:
         key = ItemStructType.MUSIC_TWO_ROW_ITEM.value
@@ -534,13 +534,13 @@ def _extract_item(entry_item: Dict, type: Optional[ItemType] = None) -> Optional
         name = entry_item[key]["title"]["runs"][0]["text"]
         endpoint = _extract_endpoint(data=entry_item[key]["navigationEndpoint"])
 
-        if type is None:
+        if item_type is None:
             try:
-                type = ItemType(entry_item[key]["subtitle"]["runs"][0]["text"])
+                item_type = ItemType(entry_item[key]["subtitle"]["runs"][0]["text"])
             except ValueError:
-                type = None
+                item_type = None
 
-        match type:
+        match item_type:
 
             case ItemType.ARTIST:
                 subscribers = convert_number(
@@ -609,7 +609,7 @@ def _extract_item(entry_item: Dict, type: Optional[ItemType] = None) -> Optional
                 )
 
             case ItemType.EPISODE | ItemType.PODCAST | ItemType.PROFILE:
-                raise UnexpectedState(type)
+                raise UnexpectedState(item_type)
 
             case _:
                 item = Item(
@@ -668,18 +668,18 @@ def _extract_item(entry_item: Dict, type: Optional[ItemType] = None) -> Optional
 
     elif ItemStructType.MUSIC_DETAIL_HEADER.value in entry_item:
         key = ItemStructType.MUSIC_DETAIL_HEADER.value
-        type = ItemType(entry_item[key]["subtitle"]["runs"][0]["text"])
+        item_type = ItemType(entry_item[key]["subtitle"]["runs"][0]["text"])
         name = entry_item[key]["title"]["runs"][0]["text"]
         thumbnail_url = entry_item[key]["thumbnail"]["croppedSquareThumbnailRenderer"][
             "thumbnail"]["thumbnails"][-1]["url"]
         release_year = int(entry_item[key]["subtitle"]["runs"][-1]["text"])
-        if type is ItemType.PLAYLIST:
+        if item_type is ItemType.PLAYLIST:
             tracks_num = entry_item[key]["secondSubtitle"]["runs"][2]["text"]
         else:
             tracks_num = entry_item[key]["secondSubtitle"]["runs"][0]["text"]
 
         # TODO artist_items
-        match type:
+        match item_type:
             case ItemType.ALBUM:
                 item = AlbumItem(
                     name=name,
@@ -721,7 +721,7 @@ def _extract_item(entry_item: Dict, type: Optional[ItemType] = None) -> Optional
                 )
 
             case _:
-                raise UnexpectedState(type)
+                raise UnexpectedState(item_type)
 
     elif ItemStructType.MUSIC_VISUAL_HEADER.value in entry_item:
         key = ItemStructType.MUSIC_VISUAL_HEADER.value
