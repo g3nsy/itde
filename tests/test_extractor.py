@@ -92,26 +92,37 @@ class TestExtractor:
 
     def __do_test_wrapper(
         self, func: Callable, test_type: str, test_name: str
-    ) -> Optional[Container]:
+    ) -> None:
         name = f"{test_type}_{test_name}"
+        tlog = f"{name} {Color.GREEN}[OK]{Color.RESET}"
         try:
             innertube_data = func()
             ext_data = extractor.extract(innertube_data)
             self.ext_data[name] = ext_data
-            self.tlog.append(f"{name} {Color.GREEN}[OK]{Color.RESET}")
         except (ITDEError, RequestError, ConnectError) as error:
             print(f"{Color.BOLD}{Color.BLUE}+++ {name} +++{Color.RESET}")
-            self.tlog.append(f"{name} {Color.RED}[ERROR]{Color.RESET}")
             traceback.print_exc()
-
+            tlog = f"{name} {Color.RED}[ERROR]{Color.RESET}"
             if isinstance(error, ITDEError):
                 with open(os.path.join(TEST_ERRS, f"{name}.json"), mode="w") as file:
-                    json.dump(innertube_data, file, indent=4)
+                    json.dump(innertube_data, file, indent=4)  # noqa
+        else:
+            print(f"{Color.BLUE}{name}{Color.RESET}")
+            if ext_data and ext_data.contents:
+                for shelf in ext_data.contents:
+                    print(f"{Color.LIGHT_GREEN}{shelf.name}{Color.RESET}")
+                    for item in shelf:
+                        print(f"{str(item)[:200]}")
+            else:
+                print("None")
+            print()
+        finally:
+            self.tlog.append(tlog)
 
 
 class Color(Enum):
     GREEN = "\033[92m"
-    LIGTH_GREEN = "\033[1;92m"
+    LIGHT_GREEN = "\033[1;92m"
     RED = "\033[91m"
     YELLOW = "\033[93m"
     BLUE = "\033[1;34m"
@@ -119,11 +130,11 @@ class Color(Enum):
     BOLD = "\033[;1m"
     CYAN = "\033[1;36m"
     LIGHT_CYAN = "\033[1;96m"
-    LIGTH_GREY = "\033[1;37m"
+    LIGHT_GREY = "\033[1;37m"
     DARK_GREY = "\033[1;90m"
     BLACK = "\033[1;30m"
     WHITE = "\033[1;97m"
-    INVERTE = "\033[;7m"
+    INVERT = "\033[;7m"
     RESET = "\033[0m"
 
     def __str__(self) -> str:
@@ -135,15 +146,6 @@ def main():
     test_extractor.test_search()
     test_extractor.test_browse()
     test_extractor.test_next()
-
-    for name, ext_data in test_extractor.ext_data.items():
-        print()
-        print(f"{Color.BLUE}{name}{Color.RESET}")
-        if ext_data and ext_data.contents:
-            for shelf in ext_data.contents:
-                print(f"{Color.LIGTH_GREEN}{shelf.name}{Color.RESET}")
-                for item in shelf:
-                    print(f"{str(item)[:200]}")
 
     print("--------------------")
     for tlog in test_extractor.tlog:
