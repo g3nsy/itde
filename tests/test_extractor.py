@@ -147,7 +147,7 @@ def main():
     test_extractor.test_browse()
     test_extractor.test_next()
 
-    print("--------------------")
+    print("----------------")
     for tlog in test_extractor.tlog:
         print(tlog)
 
