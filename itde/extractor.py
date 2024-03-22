@@ -64,7 +64,7 @@ def handle(function: Callable) -> Callable:
             raise ITDEError(
                 "An error occurred during the data extraction process: "
                 f"{error.__class__.__name__}: "
-                f"{error.args[0]}. "
+                f"{error.args[0] if error.args else ''}. "
                 f"Please open an issue at https://github.com/g3nsy/itde/issues"
             ) from error
     return inner_function
@@ -89,8 +89,10 @@ def extract(data: Dict) -> Container:
 def _extract_contents(data: Dict) -> Optional[Union[Dict, List]]:
     if ContinuationStrucType.CONTINUATION.value in data:
         key = ContinuationStrucType.CONTINUATION.value
+
         if ContinuationStrucType.SECTION_LIST.value in data[key]:
             contents = data[key][ContinuationStrucType.SECTION_LIST.value]["contents"]
+
         elif ContinuationStrucType.MUSIC_PLAYLIST_SHELF.value in data[key]:
             contents = [
                 {
@@ -99,6 +101,7 @@ def _extract_contents(data: Dict) -> Optional[Union[Dict, List]]:
                     ]
                 }
             ]
+
         elif ContinuationStrucType.MUSIC_SHELF.value in data[key]:
             contents = [
                 {
@@ -107,25 +110,37 @@ def _extract_contents(data: Dict) -> Optional[Union[Dict, List]]:
                     ]
                 }
             ]
+
         else:
             raise UnexpectedState
+
     elif ResultStructType.TWO_COLUMN_BROWSE_RESULT.value in data["contents"]:
         contents = data["contents"][ResultStructType.TWO_COLUMN_BROWSE_RESULT.value][
             "secondaryContents"]["sectionListRenderer"]["contents"]
+
     elif ResultStructType.SINGLE_COLUMN_BROWSE_RESULTS.value in data["contents"]:
-        tmp = data["contents"]["singleColumnBrowseResultsRenderer"]["tabs"][0][
-            "tabRenderer"]["content"]["sectionListRenderer"]
+        tmp = data["contents"][ResultStructType.SINGLE_COLUMN_BROWSE_RESULTS.value][
+                "tabs"][0]["tabRenderer"]["content"]["sectionListRenderer"]
+
         if ShelfStructType.GRID.value in tmp["contents"][0]:
             contents = tmp["contents"]
+
         elif ShelfStructType.MUSIC_PLAYLIST_SHELF.value in tmp["contents"][0]:
             contents = tmp["contents"][0]["musicPlaylistShelfRenderer"]["contents"]
+
+        elif ShelfStructType.MUSIC_CAROUSEL_SHELF.value in tmp["contents"][0]:
+            contents = tmp["contents"]
+
         elif ShelfStructType.MUSIC_SHELF.value in tmp["contents"][0]:
             contents = tmp["contents"]
+
         else:
-            raise UnexpectedState
+            raise UnexpectedState()
+
     elif ResultStructType.TABBED_SEARCH_RESULTS.value in data["contents"]:
         contents = data["contents"]["tabbedSearchResultsRenderer"]["tabs"][0][
             "tabRenderer"]["content"]["sectionListRenderer"]["contents"]
+
     elif ResultStructType.SINGLE_COLUMN_MUSIC_WATCH_NEXT_RESULT.value in data["contents"]:
         try:
             contents = [
@@ -137,6 +152,7 @@ def _extract_contents(data: Dict) -> Optional[Union[Dict, List]]:
             contents = None
     else:
         raise KeyNotFound(data["contents"].keys())
+
     return contents
 
 
