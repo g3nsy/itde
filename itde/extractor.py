@@ -182,7 +182,7 @@ def _extract_shelf(entry: Dict) -> Optional[Shelf]:
         if item:
             shelf = CardShelf(item=item)
         else:
-            raise UnexpectedState(f"Unexpected {key} state.")
+            return None
     elif ShelfStructType.PLAYLIST_PANEL.value in entry:
         key = ShelfStructType.PLAYLIST_PANEL.value
         name = entry[key].get("title", None)
@@ -213,7 +213,10 @@ def _extract_shelf(entry: Dict) -> Optional[Shelf]:
 def _extract_item(entry_item: Dict, item_type: Optional[ItemType] = None) -> Optional[Item]:
     if ShelfStructType.MUSIC_CARD_SHELF.value in entry_item:
         key = ShelfStructType.MUSIC_CARD_SHELF.value
-        item_type = ItemType(entry_item[key]["subtitle"]["runs"][0]["text"])
+        try:
+            item_type = ItemType(entry_item[key]["subtitle"]["runs"][0]["text"])
+        except ValueError:
+            return None
         name = entry_item[key]["title"]["runs"][0]["text"]
         endpoint = _extract_endpoint(
             entry_item[key]["title"]["runs"][0]["navigationEndpoint"]
