@@ -29,8 +29,8 @@
   "brow": [
     {
       "name": "test_1",
-      "browse_id": "MPREb_N1HMPMjZSV1",
-      "params": "ggMrGilPTEFLNXV5X2x5MWF0YVBEN1JnMGNIa0xBczF4MjYwUVJ3Uy1SWEdWWQ%3D%3D",
+      "browse_id": "",
+      "params": "",
       "continuation": ""
     },
     {
@@ -47,12 +47,6 @@
     },
     {
       "name": "test_4",
-      "browse_id": "",
-      "params": "",
-      "continuation": ""
-    },
-    {
-      "name": "test_5",
       "browse_id": "UCQi4QTpHOW5ZnnCwwMOjZOA",
       "params": "",
       "continuation": ""
