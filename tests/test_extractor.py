@@ -112,7 +112,7 @@ class TestExtractor:
                 for shelf in ext_data.contents:
                     print(f"{Color.LIGHT_GREEN}{shelf.name}{Color.RESET}")
                     for item in shelf:
-                        print(f"{str(item)[:200]}")
+                        print(f"{str(item)[:220]}")
             else:
                 print("None")
             print()
