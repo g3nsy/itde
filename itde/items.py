@@ -1,7 +1,5 @@
-from datetime import date
-from datetime import time
-from typing import List
-from typing import Optional
+from datetime import date, time
+from typing import List, Optional, Dict
 from .endpoints import Endpoint
 
 
@@ -39,7 +37,7 @@ class Item:
         else:
             return False
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(
             (
                 self.name,
@@ -48,6 +46,14 @@ class Item:
                 self.description,
             )
         )
+
+    def to_json(self) -> Dict:
+        return {
+            "name": self.name,
+            "endpoint": self.endpoint,
+            "thumbnail_url": self.thumbnail_url,
+            "description": self.description
+        }
 
 
 class ArtistItem(Item):
@@ -70,7 +76,7 @@ class ArtistItem(Item):
         else:
             return False
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(
             (
                 self.name,
@@ -80,6 +86,11 @@ class ArtistItem(Item):
                 self.subscribers,
             )
         )
+
+    def to_json(self) -> Dict:
+        d = super().to_json()
+        d["subscribers"] = self.subscribers
+        return d
 
 
 class VideoItem(Item):
@@ -120,7 +131,7 @@ class VideoItem(Item):
         else:
             return False
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(
             (
                 self.name,
@@ -132,6 +143,15 @@ class VideoItem(Item):
                 self.artist_items,
             )
         )
+
+    def to_json(self) -> Dict:
+        d = super().to_json()
+        d.update({
+            "length": self.length,
+            "views": self.views,
+            "artist_items": [a.to_json() for a in self.artist_items]
+        })
+        return d
 
 
 class AlbumItem(Item):
@@ -176,7 +196,7 @@ class AlbumItem(Item):
         else:
             return False
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(
             (
                 self.name,
@@ -189,6 +209,16 @@ class AlbumItem(Item):
                 self.artist_items,
             )
         )
+
+    def to_json(self) -> Dict:
+        d = super().to_json()
+        d.update({
+            "length": self.length,
+            "tracks_num": self.tracks_num,
+            "release_year": self.release_year,
+            "artist_items": [a.to_json for a in self.artist_items]
+        })
+        return d
 
 
 class EPItem(AlbumItem):
@@ -220,7 +250,7 @@ class PlaylistItem(AlbumItem):
         else:
             return False
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(
             (
                 self.name,
@@ -234,6 +264,17 @@ class PlaylistItem(AlbumItem):
                 self.artist_items,
             )
         )
+
+    def to_json(self) -> Dict:
+        d = super().to_json()
+        d.update({
+            "views": self.views,
+            "length": self.length,
+            "tracks_num": self.tracks_num,
+            "release_year": self.release_year,
+            "artist_items": [a.to_json() for a in self.artist_items]
+        })
+        return d
 
 
 class SingleItem(AlbumItem):
@@ -283,7 +324,7 @@ class SongItem(Item):
         else:
             return False
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(
             (
                 self.name,
@@ -296,6 +337,16 @@ class SongItem(Item):
                 self.artist_items,
             )
         )
+
+    def to_json(self) -> Dict:
+        d = super().to_json()
+        d.update({
+            "reproductions": self.reproductions,
+            "length": self.length,
+            "album_item": self.album_item.to_json() if self.album_item else None,
+            "artist_items": [a.to_json() for a in self.artist_items]
+        })
+        return d
 
 
 class ProfileItem(Item):
@@ -318,7 +369,7 @@ class ProfileItem(Item):
         else:
             return False
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(
             (
                 self.name,
@@ -328,6 +379,11 @@ class ProfileItem(Item):
                 self.handle,
             )
         )
+
+    def to_json(self) -> Dict:
+        d = super().to_json()
+        d["handle"] = self.handle
+        return d
 
 
 class PodcastItem(Item):
@@ -364,7 +420,7 @@ class PodcastItem(Item):
         else:
             return False
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(
             (
                 self.name,
@@ -375,6 +431,14 @@ class PodcastItem(Item):
                 self.artist_items,
             )
         )
+
+    def to_json(self) -> Dict:
+        d = super().to_json()
+        d.update({
+            "length": self.length,
+            "artist_items": [a.to_json for a in self.artist_items]
+        })
+        return d
 
 
 class EpisodeItem(Item):
@@ -415,7 +479,7 @@ class EpisodeItem(Item):
         else:
             return False
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(
             (
                 self.name,
@@ -427,3 +491,13 @@ class EpisodeItem(Item):
                 self.publication_date,
             )
         )
+
+    def to_json(self) -> Dict:
+        d = super().to_json()
+        d.update({
+            "length": self.length,
+            "artist_items": [a.to_json() for a in self.artist_items],
+            "publication_date": self.publication_date
+        })
+        return d
+
