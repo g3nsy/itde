@@ -27,11 +27,11 @@ from .exceptions import UnregisteredItemType
 from .exceptions import UnregisteredHeaderType
 from .exceptions import ITDEError
 
-from .ytypes import ItemType
-from .ytypes import EndpointType
-from .ytypes import ItemStructType
-from .ytypes import ShelfStructType
-from .ytypes import ContinuationStrucType
+from .types import ItemType
+from .types import EndpointType
+from .types import ItemStructType
+from .types import ShelfStructType
+from .types import ContinuationStrucType
 
 
 __all__ = [
