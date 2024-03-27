@@ -121,10 +121,15 @@ class Tester:
                     traceback.print_exc()
                     self.des_log.append(f"{name} {Color.RED}[ERROR]{Color.RESET}")
 
-    # def test_deserialization_integrity(self) -> None:
-    #     for name, container in self.des_containers.items():
-    #         if self.ext_containers[name] != container:
-    #
+    def test_deserialization_integrity(self) -> None:
+        for name, container in self.des_containers.items():
+            if self.ext_containers[name] == container:
+                self.dei_log.append(f"{name} {Color.GREEN}[ERROR]{Color.RESET}")
+            else:
+                self.dei_log.append(f"{name} {Color.RED}[ERROR]{Color.RESET}")
+                print(container)
+                print('-----')
+                print(self.ext_containers[name])
 
  
     def __do_extraction_test__(self, func: Callable, test_type: str, test_name: str) -> None:
@@ -157,8 +162,6 @@ class Tester:
                     json.dump(innertube_data, file, indent=4)  # noqa
 
 
-
-
 class Color(Enum):
     GREEN = "\033[92m"
     LIGHT_GREEN = "\033[1;92m"
@@ -188,6 +191,7 @@ def main():
 
     tester.test_serialization()
     tester.test_deserialization()
+    tester.test_deserialization_integrity()
 
     print("-- Extractions --")
     for log in tester.ext_log:
@@ -199,6 +203,10 @@ def main():
 
     print("-- Deserialization --")
     for log in tester.des_log:
+        print(log)
+
+    print("-- Deserialization Integrity --")
+    for log in tester.dei_log:
         print(log)
 
 if __name__ == "__main__":
