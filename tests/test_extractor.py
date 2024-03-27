@@ -15,7 +15,8 @@ from typing import Optional
 
 TEST_PATH = os.path.dirname(__file__)
 TEST_DATA = os.path.join(TEST_PATH, "test_data.json")
-TEST_ERRS = os.path.join(TEST_PATH, "errors")
+TEST_INNT = os.path.join(TEST_PATH, "innertube")
+TEST_DUMP = os.path.join(TEST_PATH, "dumps")
 ITDE_PATH = os.path.dirname(TEST_PATH)
 sys.path.insert(0, ITDE_PATH)
 
@@ -24,29 +25,41 @@ from itde import Container  # noqa
 from itde import ITDEError  # noqa
 
 
-if os.path.exists(TEST_ERRS):
-    shutil.rmtree(path=TEST_ERRS)
+def clear(path: str) -> None:
+    if os.path.exists(path):
+        shutil.rmtree(path)
+    os.mkdir(path)
 
-os.mkdir(path=TEST_ERRS)
+
+clear(TEST_INNT)
+clear(TEST_DUMP)
 
 
-class TestExtractor:
+class Tester:
 
-    def __init__(self) -> None:
+    def __init__(self, save_data: bool = True) -> None:
         self.__innertube_client = InnerTube("WEB_REMIX")
-        self.tlog: List[str] = []
-        self.ext_data: Dict[str, Optional[Container]] = {}
+
+        self.ext_log: List[str] = []
+        self.ser_log: List[str] = []
+        self.des_log: List[str] = []
+        self.dei_log: List[str] = []
+
+        self.ext_containers: Dict[str, Optional[Container]] = {}
+        self.des_containers: Dict[str, Optional[Container]] = {}
+
+        self.save_data = save_data
 
         with open(TEST_DATA, mode="r") as file:
             test_data = json.loads(file.read())
+
         self.__test_sear = test_data["sear"]
         self.__test_brow = test_data["brow"]
         self.__test_next = test_data["next"]
-        # self.__test_cont = test_data["cont"]
 
-    def test_search(self) -> None:
+    def test_search_extraction(self) -> None:
         for test in self.__test_sear:
-            self.__do_test_wrapper(
+            self.__do_extraction_test__(
                 func=lambda: self.__innertube_client.search(
                     query=test["query"],
                     params=test["params"],
@@ -56,9 +69,9 @@ class TestExtractor:
                 test_name=test["name"],
             )
 
-    def test_browse(self) -> None:
+    def test_browse_extraction(self) -> None:
         for test in self.__test_brow:
-            self.__do_test_wrapper(
+            self.__do_extraction_test__(
                 func=lambda: self.__innertube_client.browse(
                     browse_id=test["browse_id"],
                     params=test["params"],
@@ -68,9 +81,9 @@ class TestExtractor:
                 test_name=test["name"],
             )
 
-    def test_next(self) -> None:
+    def test_next_extraction(self) -> None:
         for test in self.__test_next:
-            self.__do_test_wrapper(
+            self.__do_extraction_test__(
                 func=lambda: self.__innertube_client.next(
                     video_id=test["video_id"],
                     playlist_id=test["playlist_id"],
@@ -82,34 +95,55 @@ class TestExtractor:
                 test_name=test["name"],
             )
 
-    # def test_continuation(self) -> None:
-    #     for test in self.__test_sear:
-    #         innertube_data = self.__innertube_client.search(
-    #             query=test["query"],
-    #             params=test["params"],
-    #             continuation=test["continuation"],
-    #         )
+    def test_serialization(self) -> None:
+        for name, container in self.ext_containers.items():
+            try:
+                dump = None if container is None else container.dump()
+                if self.save_data:
+                    with open(os.path.join(TEST_DUMP, f"{name}.json"), mode="w") as file:
+                        json.dump(dump, file, indent=4)
+                self.ser_log.append(f"{name} {Color.GREEN}[OK]{Color.RESET}")
+            except Exception:
+                traceback.print_exc()
+                self.ser_log.append(f"{name} {Color.RED}[ERROR]{Color.RESET}")
 
-    def __do_test_wrapper(
-        self, func: Callable, test_type: str, test_name: str
-    ) -> None:
+    def test_deserialization(self) -> None:
+        for filename in os.listdir(TEST_DUMP):
+            with open(os.path.join(TEST_DUMP, filename), mode="r") as file:
+                name = filename.split(".")[0]
+                try:
+                    data = json.loads(file.read())
+                    container = Container()
+                    container.load(data)
+                    self.des_containers[name] = container
+                    self.des_log.append(f"{name} {Color.GREEN}[OK]{Color.RESET}")
+                except BaseException:
+                    traceback.print_exc()
+                    self.des_log.append(f"{name} {Color.RED}[ERROR]{Color.RESET}")
+
+    # def test_deserialization_integrity(self) -> None:
+    #     for name, container in self.des_containers.items():
+    #         if self.ext_containers[name] != container:
+    #
+
+ 
+    def __do_extraction_test__(self, func: Callable, test_type: str, test_name: str) -> None:
         name = f"{test_type}_{test_name}"
-        tlog = f"{name} {Color.GREEN}[OK]{Color.RESET}"
+        log = f"{name} {Color.GREEN}[OK]{Color.RESET}"
         try:
             innertube_data = func()
-            ext_data = extractor.extract(innertube_data)
-            self.ext_data[name] = ext_data
+            ext_container = extractor.extract(innertube_data)
+            self.ext_containers[name] = ext_container
         except (ITDEError, RequestError, ConnectError) as error:
             print(f"{Color.BOLD}{Color.BLUE}+++ {name} +++{Color.RESET}")
             traceback.print_exc()
-            tlog = f"{name} {Color.RED}[ERROR]{Color.RESET}"
-            if isinstance(error, ITDEError):
-                with open(os.path.join(TEST_ERRS, f"{name}.json"), mode="w") as file:
-                    json.dump(innertube_data, file, indent=4)  # noqa
-        else:
+            self.ext_log.append(f"{name} {Color.RED}[ERROR]{Color.RESET}")
+            if not isinstance(error, ITDEError):
+                return
+        else: 
             print(f"{Color.BLUE}{name}{Color.RESET}")
-            if ext_data and ext_data.contents:
-                for shelf in ext_data.contents:
+            if ext_container and ext_container.contents:
+                for shelf in ext_container.contents:
                     print(f"{Color.LIGHT_GREEN}{shelf.name}{Color.RESET}")
                     for item in shelf:
                         print(f"{str(item)[:220]}")
@@ -117,7 +151,12 @@ class TestExtractor:
                 print("None")
             print()
         finally:
-            self.tlog.append(tlog)
+            self.ext_log.append(log)
+            if self.save_data:
+                with open(os.path.join(TEST_INNT, f"{name}.json"), mode="w") as file:
+                    json.dump(innertube_data, file, indent=4)  # noqa
+
+
 
 
 class Color(Enum):
@@ -142,15 +181,25 @@ class Color(Enum):
 
 
 def main():
-    test_extractor = TestExtractor()
-    test_extractor.test_search()
-    test_extractor.test_browse()
-    test_extractor.test_next()
+    tester = Tester()
+    tester.test_search_extraction()
+    tester.test_browse_extraction()
+    tester.test_next_extraction()
 
-    print("----------------")
-    for tlog in test_extractor.tlog:
-        print(tlog)
+    tester.test_serialization()
+    tester.test_deserialization()
 
+    print("-- Extractions --")
+    for log in tester.ext_log:
+        print(log)
+
+    print("-- Serialization --")
+    for log in tester.ser_log:
+        print(log)
+
+    print("-- Deserialization --")
+    for log in tester.des_log:
+        print(log)
 
 if __name__ == "__main__":
     main()
