@@ -1,13 +1,15 @@
+import itde.utils as utils
 from datetime import date, time
 from typing import List, Optional, Dict
+from .types import ItemType
 from .endpoints import Endpoint
 
 
 class Item:
     def __init__(
         self,
-        name: str,
-        thumbnail_url: str,
+        name: Optional[str] = None,
+        thumbnail_url: Optional[str] = None,
         endpoint: Optional[Endpoint] = None,
         description: Optional[str] = None,
     ) -> None:
@@ -17,6 +19,9 @@ class Item:
         self.description = description
 
     def __repr__(self) -> str:
+        return f"itde.{str(self)}"
+
+    def __str__(self) -> str:
         return (
             "Item{"
             f"name={self.name}, "
@@ -38,22 +43,27 @@ class Item:
             return False
 
     def __hash__(self) -> int:
-        return hash(
-            (
-                self.name,
-                self.thumbnail_url,
-                self.endpoint,
-                self.description,
-            )
-        )
+        return hash((
+            self.name,
+            self.thumbnail_url,
+            self.endpoint,
+            self.description,
+        ))
 
-    def to_json(self) -> Dict:
+    def dump(self) -> Dict:
         return {
+            "type": None,
             "name": self.name,
-            "endpoint": self.endpoint,
+            "endpoint": None if self.endpoint is None else self.endpoint.dump(),
             "thumbnail_url": self.thumbnail_url,
             "description": self.description
         }
+
+    def load(self, data: Dict) -> None:
+        self.name = data["name"]
+        self.thumbnail_url = data["thumbnail_url"]
+        self.description = data["description"]
+        self.endpoint = None if data["endpoint"] is None else utils.get_endpoint(data["endpoint"])
 
 
 class ArtistItem(Item):
@@ -61,8 +71,8 @@ class ArtistItem(Item):
         super().__init__(*args, **kwargs)
         self.subscribers = subscribers
 
-    def __repr__(self) -> str:
-        return super().__repr__()[:-1] + f", subscribers={self.subscribers}" "}"
+    def __str__(self) -> str:
+        return super().__str__()[:-1] + f", subscribers={self.subscribers}" "}"
 
     def __eq__(self, __value: object) -> bool:
         if isinstance(__value, ArtistItem):
@@ -77,20 +87,25 @@ class ArtistItem(Item):
             return False
 
     def __hash__(self) -> int:
-        return hash(
-            (
-                self.name,
-                self.thumbnail_url,
-                self.endpoint,
-                self.description,
-                self.subscribers,
-            )
-        )
+        return hash((
+            self.name,
+            self.thumbnail_url,
+            self.endpoint,
+            self.description,
+            self.subscribers,
+        ))
 
-    def to_json(self) -> Dict:
-        d = super().to_json()
-        d["subscribers"] = self.subscribers
+    def dump(self) -> Dict:
+        d = super().dump()
+        d.update({
+            "type": ItemType.ARTIST.value,
+            "subscribers": self.subscribers
+        })
         return d
+
+    def load(self, data: Dict) -> None:
+        super().load(data)
+        self.subscribers = data["subscribers"]
 
 
 class VideoItem(Item):
@@ -109,9 +124,10 @@ class VideoItem(Item):
         self.views = views
         self.artist_items = artist_items
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return (
-            super().__repr__()[:-1] + f", length={self.length}"
+            super().__str__()[:-1] + 
+            f", length={self.length}"
             f", views={self.views}"
             f", artist_items={self.artist_items}"
             "}"
@@ -132,26 +148,41 @@ class VideoItem(Item):
             return False
 
     def __hash__(self) -> int:
-        return hash(
-            (
-                self.name,
-                self.thumbnail_url,
-                self.endpoint,
-                self.description,
-                self.length,
-                self.views,
-                self.artist_items,
-            )
-        )
+        return hash((
+            self.name,
+            self.thumbnail_url,
+            self.endpoint,
+            self.description,
+            self.length,
+            self.views,
+            self.artist_items,
+        ))
 
-    def to_json(self) -> Dict:
-        d = super().to_json()
+    def dump(self) -> Dict:
+        d = super().dump()
         d.update({
-            "length": self.length,
+            "type": ItemType.VIDEO.value,
             "views": self.views,
-            "artist_items": [a.to_json() for a in self.artist_items]
+            "artist_items": [a.dump() for a in self.artist_items],
+            "length": None if self.length is None else {
+                "hour": self.length.hour,
+                "minute": self.length.minute,
+                "second": self.length.second
+            }
         })
         return d
+
+    def load(self, data: Dict) -> None:
+        super().load(data)
+        self.views = data["views"]
+        self.artist_items = utils.get_artist_items(data["artist_items"])
+        if data["length"] is not None:
+            length = data["length"]
+            self.length = time(
+                hour=length["hour"],
+                minute=length["minute"],
+                second=length["second"]
+            )
 
 
 class AlbumItem(Item):
@@ -172,9 +203,10 @@ class AlbumItem(Item):
         self.release_year = release_year
         self.artist_items = artist_items
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return (
-            super().__repr__()[:-1] + f", release_year={self.release_year}"
+            super().__str__()[:-1] + 
+            f", release_year={self.release_year}"
             f", artist_items={self.artist_items}"
             f", length={self.length}"
             f", tracks_num={self.tracks_num}"
@@ -197,33 +229,56 @@ class AlbumItem(Item):
             return False
 
     def __hash__(self) -> int:
-        return hash(
-            (
-                self.name,
-                self.thumbnail_url,
-                self.endpoint,
-                self.description,
-                self.length,
-                self.tracks_num,
-                self.release_year,
-                self.artist_items,
-            )
-        )
+        return hash((
+            self.name,
+            self.thumbnail_url,
+            self.endpoint,
+            self.description,
+            self.length,
+            self.tracks_num,
+            self.release_year,
+            self.artist_items,
+        ))
 
-    def to_json(self) -> Dict:
-        d = super().to_json()
+    def dump(self) -> Dict:
+        d = super().dump()
         d.update({
-            "length": self.length,
+            "type": ItemType.ALBUM.value,
             "tracks_num": self.tracks_num,
             "release_year": self.release_year,
-            "artist_items": [a.to_json for a in self.artist_items]
+            "artist_items": [a.dump() for a in self.artist_items],
+            "length": None if self.length is None else {
+                "hour": self.length.hour,
+                "minute": self.length.minute,
+                "second": self.length.second
+            }
         })
         return d
+
+    def load(self, data: Dict) -> None:
+        super().load(data)
+        self.tracks_num = data["tracks_num"]
+        self.release_year = data["release_year"]
+        self.artist_items = utils.get_artist_items(data["artist_items"])
+        if data["length"] is not None:
+            length = data["length"]
+            self.length = time(
+                hour=length["hour"],
+                minute=length["minute"],
+                second=length["second"]
+            )
 
 
 class EPItem(AlbumItem):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
+
+    def dump(self) -> Dict:
+        d = super().dump()
+        d.update({
+            "type": ItemType.EP.value
+        })
+        return d
 
 
 class PlaylistItem(AlbumItem):
@@ -231,8 +286,8 @@ class PlaylistItem(AlbumItem):
         super().__init__(*args, **kwargs)
         self.views = views
 
-    def __repr__(self) -> str:
-        return super().__repr__()[:-1] + f", views={self.views}" "}"
+    def __str__(self) -> str:
+        return super().__str__()[:-1] + f", views={self.views}" "}"
 
     def __eq__(self, __value: object) -> bool:
         if isinstance(__value, PlaylistItem):
@@ -251,35 +306,59 @@ class PlaylistItem(AlbumItem):
             return False
 
     def __hash__(self) -> int:
-        return hash(
-            (
-                self.name,
-                self.thumbnail_url,
-                self.endpoint,
-                self.description,
-                self.views,
-                self.length,
-                self.tracks_num,
-                self.release_year,
-                self.artist_items,
-            )
-        )
+        return hash((
+            self.name,
+            self.thumbnail_url,
+            self.endpoint,
+            self.description,
+            self.views,
+            self.length,
+            self.tracks_num,
+            self.release_year,
+            self.artist_items,
+        ))
 
-    def to_json(self) -> Dict:
-        d = super().to_json()
+    def dump(self) -> Dict:
+        d = super().dump()
         d.update({
+            "type": ItemType.PLAYLIST.value,
             "views": self.views,
-            "length": self.length,
             "tracks_num": self.tracks_num,
             "release_year": self.release_year,
-            "artist_items": [a.to_json() for a in self.artist_items]
+            "artist_items": [a.dump() for a in self.artist_items],
+            "length": None if self.length is None else {
+                "hour": self.length.hour,
+                "minute": self.length.minute,
+                "second": self.length.second
+            }
         })
         return d
+
+    def load(self, data: Dict) -> None:
+        super().load(data)
+        self.views = data["views"]
+        self.tracks_num = data["tracks_num"]
+        self.release_year = data["release_year"]
+        self.artist_items = utils.get_artist_items(data["artist_items"])
+        if data["length"] is not None:
+            length = data["length"]
+            self.length = time(
+                hour=length["hour"],
+                minute=length["minute"],
+                second=length["second"]
+            )
 
 
 class SingleItem(AlbumItem):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
+
+    def dump(self) -> Dict:
+        d = super().dump()
+        d.update({
+            "type": ItemType.SINGLE.value
+        })
+        return d
 
 
 class SongItem(Item):
@@ -300,9 +379,10 @@ class SongItem(Item):
         self.album_item = album_item
         self.artist_items = artist_items
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return (
-            super().__repr__()[:-1] + f", length={self.length}"
+            super().__str__()[:-1] + 
+            f", length={self.length}"
             f", reproductions={self.reproductions}"
             f", album_item={self.album_item}"
             f", artist_items={self.artist_items}"
@@ -325,28 +405,44 @@ class SongItem(Item):
             return False
 
     def __hash__(self) -> int:
-        return hash(
-            (
-                self.name,
-                self.thumbnail_url,
-                self.endpoint,
-                self.description,
-                self.reproductions,
-                self.length,
-                self.album_item,
-                self.artist_items,
-            )
-        )
+        return hash((
+            self.name,
+            self.thumbnail_url,
+            self.endpoint,
+            self.description,
+            self.reproductions,
+            self.length,
+            self.album_item,
+            self.artist_items,
+        ))
 
-    def to_json(self) -> Dict:
-        d = super().to_json()
+    def dump(self) -> Dict:
+        d = super().dump()
         d.update({
+            "type": ItemType.SINGLE.value,
             "reproductions": self.reproductions,
-            "length": self.length,
-            "album_item": self.album_item.to_json() if self.album_item else None,
-            "artist_items": [a.to_json() for a in self.artist_items]
+            "album_item": self.album_item.dump() if self.album_item else None,
+            "artist_items": [a.dump() for a in self.artist_items],
+            "length": None if self.length is None else {
+                "hour": self.length.hour,
+                "minute": self.length.minute,
+                "second": self.length.second
+            }
         })
         return d
+
+    def load(self, data: Dict) -> None:
+        super().load(data)
+        self.reproductions = data["reproductions"]
+        self.album_item = data["album_item"]
+        self.artist_items = utils.get_artist_items(data["artist_items"])
+        if data["length"] is not None:
+            length = data["length"]
+            self.length = time(
+                hour=length["hour"],
+                minute=length["minute"],
+                second=length["second"]
+            )
 
 
 class ProfileItem(Item):
@@ -354,8 +450,8 @@ class ProfileItem(Item):
         super().__init__(*args, **kwargs)
         self.handle = handle
 
-    def __repr__(self) -> str:
-        return super().__repr__()[:-1] + f", handle={self.handle}" "}"
+    def __str__(self) -> str:
+        return super().__str__()[:-1] + f", handle={self.handle}" "}"
 
     def __eq__(self, __value: object) -> bool:
         if isinstance(__value, ProfileItem):
@@ -370,20 +466,25 @@ class ProfileItem(Item):
             return False
 
     def __hash__(self) -> int:
-        return hash(
-            (
+        return hash((
                 self.name,
                 self.thumbnail_url,
                 self.endpoint,
                 self.description,
                 self.handle,
-            )
-        )
+        ))
 
-    def to_json(self) -> Dict:
-        d = super().to_json()
-        d["handle"] = self.handle
+    def dump(self) -> Dict:
+        d = super().dump()
+        d.update({
+            "type": ItemType.PROFILE.value,
+            "handle": self.handle
+        })
         return d
+
+    def load(self, data: Dict) -> None:
+        super().load(data)
+        self.handle = data["handle"]
 
 
 class PodcastItem(Item):
@@ -400,9 +501,10 @@ class PodcastItem(Item):
         self.length = length
         self.artist_items = artist_items
 
-    def __repr__(self):
+    def __str__(self):
         return (
-            super().__repr__()[:-1] + f", length={self.length}"
+            super().__str__()[:-1] + 
+            f", length={self.length}"
             f", artist_items={self.artist_items}"
             "}"
         )
@@ -432,13 +534,29 @@ class PodcastItem(Item):
             )
         )
 
-    def to_json(self) -> Dict:
-        d = super().to_json()
+    def dump(self) -> Dict:
+        d = super().dump()
         d.update({
-            "length": self.length,
-            "artist_items": [a.to_json for a in self.artist_items]
+            "type": ItemType.PODCAST.value,
+            "artist_items": [a.dump for a in self.artist_items],
+            "length": None if self.length is None else {
+                "hour": self.length.hour,
+                "minute": self.length.minute,
+                "second": self.length.second
+            }
         })
         return d
+
+    def load(self, data: Dict) -> None:
+        super().load(data)
+        self.artist_items = utils.get_artist_items(data["artist_items"])
+        if data["length"] is not None:
+            length = data["length"]
+            self.length = time(
+                hour=length["hour"],
+                minute=length["minute"],
+                second=length["second"]
+            )
 
 
 class EpisodeItem(Item):
@@ -457,9 +575,9 @@ class EpisodeItem(Item):
         self.publication_date = publication_date
         self.artist_items = artist_items
 
-    def __repr__(self):
+    def __str__(self):
         return (
-            super().__repr__()[:-1] + f", publication_date={self.publication_date}"
+            super().__str__()[:-1] + f", publication_date={self.publication_date}"
             f", length={self.length}"
             f", artist_items={self.artist_items}"
             "}"
@@ -480,8 +598,7 @@ class EpisodeItem(Item):
             return False
 
     def __hash__(self) -> int:
-        return hash(
-            (
+        return hash((
                 self.name,
                 self.thumbnail_url,
                 self.endpoint,
@@ -489,15 +606,30 @@ class EpisodeItem(Item):
                 self.length,
                 self.artist_items,
                 self.publication_date,
-            )
-        )
+        ))
 
-    def to_json(self) -> Dict:
-        d = super().to_json()
+    def dump(self) -> Dict:
+        d = super().dump()
         d.update({
-            "length": self.length,
-            "artist_items": [a.to_json() for a in self.artist_items],
-            "publication_date": self.publication_date
+            "type": ItemType.EPISODE.value,
+            "publication_date": str(self.publication_date),
+            "artist_items": [a.dump() for a in self.artist_items],
+            "length": None if self.length is None else {
+                "hour": self.length.hour,
+                "minute": self.length.minute,
+                "second": self.length.second
+            }
         })
         return d
 
+    def load(self, data: Dict) -> None:
+        super().load(data)
+        self.publication_date = data["publication_date"]
+        self.artist_items = utils.get_artist_items(data["artist_items"])
+        if data["length"] is not None:
+            length = data["length"]
+            self.length = time(
+                hour=length["hour"],
+                minute=length["minute"],
+                second=length["second"]
+            )

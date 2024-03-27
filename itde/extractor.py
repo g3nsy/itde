@@ -41,12 +41,12 @@ from .items import PodcastItem
 from .items import ProfileItem
 from .items import EpisodeItem
 
-from .ytypes import ContinuationStrucType
-from .ytypes import ItemStructType
-from .ytypes import ShelfStructType
-from .ytypes import ResultStructType
-from .ytypes import EndpointType
-from .ytypes import ItemType
+from .types import ContinuationStrucType
+from .types import ItemStructType
+from .types import ShelfStructType
+from .types import ResultStructType
+from .types import EndpointType
+from .types import ItemType
 
 
 log = logging.getLogger(__name__)
@@ -112,7 +112,7 @@ def _extract_contents(data: Dict) -> Optional[Union[Dict, List]]:
             ]
 
         else:
-            raise UnexpectedState
+            raise UnexpectedState()
 
     elif ResultStructType.TWO_COLUMN_BROWSE_RESULT.value in data["contents"]:
         contents = data["contents"][ResultStructType.TWO_COLUMN_BROWSE_RESULT.value][
@@ -357,9 +357,11 @@ def _extract_item(entry_item: Dict, item_type: Optional[ItemType] = None) -> Opt
                     release_year=release_year,
                 )
             case ItemType.VIDEO:
-                length = entry_item[key]["flexColumns"][1][
-                    "musicResponsiveListItemFlexColumnRenderer"][
-                    "text"]["runs"][-1]["text"]
+                length = convert_length(
+                    entry_item[key]["flexColumns"][1][
+                        "musicResponsiveListItemFlexColumnRenderer"][
+                        "text"]["runs"][-1]["text"]
+                )
                 views = convert_number(
                     entry_item[key]["flexColumns"][1][
                         "musicResponsiveListItemFlexColumnRenderer"][
@@ -689,13 +691,13 @@ def _extract_item(entry_item: Dict, item_type: Optional[ItemType] = None) -> Opt
 
 
 def _extract_endpoint(data: Dict) -> Endpoint:
-    if EndpointType.BROWSE_ENDPOINT.value in data:
+    if EndpointType.BROWSE.value in data:
         endpoint_data = data["browseEndpoint"]
         browse_id = endpoint_data["browseId"]
         endpoint = BrowseEndpoint(
             browse_id=browse_id, params=endpoint_data.get("params", None)
         )
-    elif EndpointType.WATCH_ENDPOINT.value in data:
+    elif EndpointType.WATCH.value in data:
         endpoint_data = data["watchEndpoint"]
         video_id = endpoint_data["videoId"]
         endpoint = WatchEndpoint(
@@ -703,13 +705,13 @@ def _extract_endpoint(data: Dict) -> Endpoint:
             playlist_id=endpoint_data.get("playlist_id", None),
             params=endpoint_data.get("params", None),
         )
-    elif EndpointType.SEARCH_ENDPOINT.value in data:
+    elif EndpointType.SEARCH.value in data:
         endpoint_data = data["searchEndpoint"]
         query = endpoint_data["query"]
         endpoint = SearchEndpoint(
             query=query, params=endpoint_data.get("params", None)
         )
-    elif EndpointType.URL_ENDPOINT in data:
+    elif EndpointType.URL in data:
         endpoint_data = data["urlEndpoint"]
         url = endpoint_data["url"]
         endpoint = UrlEndpoint( 

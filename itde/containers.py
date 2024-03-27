@@ -1,7 +1,8 @@
-from typing import List
-from typing import Optional
+from typing import List, Optional, Dict
 from .items import Item
 from .endpoints import Endpoint
+from .types import ShelfType
+from .utils import get_endpoint, get_items, get_item
 
 
 class Shelf(List[Item]):
@@ -14,7 +15,6 @@ class Shelf(List[Item]):
         **kwargs,
     ) -> None:
         super().__init__(*args, **kwargs)
-        self.type = type
         self.name = name
         self.endpoint = endpoint
         self.continuation = continuation
@@ -30,19 +30,38 @@ class Shelf(List[Item]):
         else:
             return False
 
-    def __repr__(self) -> str:
+    # def __repr__(self) -> str:
+        # return f"itde.{str(self)}"
+
+    def __str__(self) -> str:
         return (
             "Shelf{"
             f"name={self.name}, "
             f"endpoint={self.endpoint}, "
             f"continuation={self.continuation}, "
-            f"items={super().__repr__()}"
+            f"items={super().__str__()}"
             "}"
         )
 
+    def dump(self) -> Dict:
+        return {
+            "type": ShelfType.SHELF.value,
+            "name": self.name,
+            "endpoint": None if self.endpoint is None else self.endpoint.dump(),
+            "continuation": self.continuation,
+            "items": [item.dump() for item in self]
+        }
+
+    def load(self, data: Dict) -> None:
+        self.name = data["name"]
+        self.endpoint = None if data["endpoint"] is None else get_endpoint(data["endpoint"])
+        self.continuation = data["continuation"]
+        for item in get_items(data["items"]):
+            self.append(item)
+
 
 class CardShelf(Shelf):
-    def __init__(self, item: Item) -> None:
+    def __init__(self, item: Optional[Item] = None) -> None:
         super().__init__()
         self.item = item
 
@@ -58,23 +77,31 @@ class CardShelf(Shelf):
         else:
             return False
 
-    def __repr__(self) -> str:
-        return (
-            "CardShelf{"
-            f"item={self.item}, "
-            f"name={self.name}, "
-            f"endpoint={self.endpoint}, "
-            f"items={super(list, self).__repr__()}"
-        )
+    def __str__(self) -> str:
+        return "CardShelf{" f"{self.item}" + super().__str__()[7:]
+
+    def dump(self) -> Dict:
+        d = super().dump()
+        d.update({
+            "type": ShelfType.CARD_SHELF.value,
+            "item": None if self.item is None else self.item.dump(),
+        })
+        return d
+
+    def load(self, data: Dict) -> None:
+        super().load(data)
+        self.item = get_item(data["item"])
 
 
 class Container:
     def __init__(
-        self, 
-        header: Optional[Item], 
-        contents: Optional[List[Shelf]]
+        self,
+        header: Optional[Item] = None,
+        contents: Optional[List[Shelf]] = None
     ) -> None:
         self.header = header
+        if contents is None:
+            contents = []
         self.contents = contents
 
     def __eq__(self, __value: object) -> bool:
@@ -83,11 +110,28 @@ class Container:
         else:
             return False
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return (
-            "Container{" 
-            f"header={self.header}, " 
-            f"contents={self.contents}" 
+            "Container{"
+            f"header={self.header}, "
+            f"contents={self.contents}"
             "}"
         )
 
+    def dump(self) -> Dict:
+        return {
+            "header": None if self.header is None else self.header.dump(),
+            "contents": None if self.contents is None else [shelf.dump() for shelf in self.contents]
+        }
+
+    def load(self, data: Dict) -> None:
+        self.header = None if data["header"] is None else get_item(data["header"])
+        for shelf_data in data["contents"]:
+            if shelf_data["type"] == ShelfType.SHELF.value:
+                shelf = Shelf()
+            elif shelf_data["type"] == ShelfType.CARD_SHELF.value:
+                shelf = CardShelf()
+            else:
+                raise ValueError("Invalid type")
+            shelf.load(shelf_data)
+            self.contents.append(shelf)

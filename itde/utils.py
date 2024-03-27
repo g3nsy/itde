@@ -1,10 +1,24 @@
 import re
-from typing import Callable
-from typing import Optional
-from datetime import time
-from datetime import date
-from .ytypes import ItemType
+from typing import Callable, Optional, List, Dict
+from datetime import time, date
+from .items import Item
+from .items import ArtistItem
+from .items import VideoItem
+from .items import AlbumItem
+from .items import EPItem
+from .items import PlaylistItem
+from .items import SingleItem
+from .items import SongItem
+from .items import ProfileItem
+from .items import PodcastItem
+from .items import EpisodeItem
+from .types import EndpointType, ItemType
 from .exceptions import UnexpectedState
+from .endpoints import WatchEndpoint
+from .endpoints import BrowseEndpoint
+from .endpoints import UrlEndpoint
+from .endpoints import SearchEndpoint
+from .endpoints import Endpoint
 
 
 def handle(function: Callable) -> Callable:
@@ -115,3 +129,62 @@ def get_item_type(shelf_name: str) -> Optional[ItemType]:
 
 def match(seq: str, title: str) -> bool:
     return re.search(seq, title, re.IGNORECASE) is not None
+
+
+def get_artist_items(data: List) -> List[ArtistItem]:
+    artist_items = []
+    for artist_data in data:
+        artist_item = ArtistItem()
+        artist_item.load(artist_data)
+        artist_items.append(artist_item)
+    return artist_items
+
+
+def get_items(data: List) -> List[Item]:
+    return [get_item(item_data) for item_data in data]
+
+
+def get_item(data: Dict) -> Item:
+    match data["type"]:
+        case ItemType.ARTIST.value:
+            item = ArtistItem()
+        case ItemType.VIDEO.value:
+            item = VideoItem()
+        case ItemType.ALBUM.value:
+            item = AlbumItem()
+        case ItemType.EP.value:
+            item = EPItem()
+        case ItemType.PLAYLIST.value:
+            item = PlaylistItem()
+        case ItemType.SINGLE.value:
+            item = SingleItem()
+        case ItemType.SONG.value:
+            item = SongItem()
+        case ItemType.PROFILE.value:
+            item = ProfileItem()
+        case ItemType.PODCAST.value:
+            item = PodcastItem()
+        case ItemType.EPISODE.value:
+            item = EpisodeItem()
+        case None:
+            item = Item()
+        case _:
+            raise ValueError("Invalid type")
+    item.load(data)
+    return item
+
+
+def get_endpoint(data: Dict) -> Endpoint:
+    match data["type"]:
+        case EndpointType.URL.value:
+            endpoint = UrlEndpoint()
+        case EndpointType.BROWSE.value:
+            endpoint = BrowseEndpoint()
+        case EndpointType.SEARCH.value:
+            endpoint = SearchEndpoint()
+        case EndpointType.WATCH.value:
+            endpoint = WatchEndpoint()
+        case _:
+            raise ValueError("Invalid type")
+    endpoint.load(data)
+    return endpoint

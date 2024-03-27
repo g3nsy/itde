@@ -51,12 +51,35 @@ class ItemType(Enum):
     PROFILE = "Profile"
     PODCAST = "Podcast"
 
+    def __repr__(self) -> str:
+        return f"itde.ItemType.{str(self)}"
+
+    def __str__(self) -> str:
+        return self.value
+
+
+class ShelfType(Enum):
+    SHELF = "Shelf"
+    CARD_SHELF = "CardShelf"
+
+    def __repr__(self) -> str:
+        return f"itde.ShelfType.{str(self)}"
+
+    def __str__(self) -> str:
+        return self.value
+
 
 class EndpointType(Enum):
-    WATCH_ENDPOINT = "watchEndpoint"
-    BROWSE_ENDPOINT = "browseEndpoint"
-    SEARCH_ENDPOINT = "searchEndpoint"
-    URL_ENDPOINT = "urlEndpoint"
+    WATCH = "watchEndpoint"
+    BROWSE = "browseEndpoint"
+    SEARCH = "searchEndpoint"
+    URL = "urlEndpoint"
+
+    def __repr__(self) -> str:
+        return f"itde.EndpointType.{str(self)}"
+
+    def __str__(self) -> str:
+        return self.value
 
 
 class TextDivisorType(Enum):
