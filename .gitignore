@@ -5,7 +5,8 @@
 .flake8
 
 # InnerTube response
-tests/errors/*
+tests/dumps/*
+tests/innertube/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
