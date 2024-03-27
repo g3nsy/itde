@@ -595,8 +595,12 @@ class EpisodeItem(Item):
         d = super().dump()
         d.update({
             "type": ItemType.EPISODE.value,
-            "publication_date": str(self.publication_date),
             "artist_items": [a.dump() for a in self.artist_items],
+            "publication_date": None if self.publication_date is None else {
+                "month": self.publication_date.month,
+                "day": self.publication_date.day,
+                "year": self.publication_date.year
+            },
             "length": None if self.length is None else {
                 "hour": self.length.hour,
                 "minute": self.length.minute,
@@ -607,8 +611,14 @@ class EpisodeItem(Item):
 
     def load(self, data: Dict) -> None:
         super().load(data)
-        self.publication_date = data["publication_date"]
         self.artist_items = utils.get_artist_items(data["artist_items"])
+        if data["publication_date"] is not None:
+            publication_date = data["publication_date"]
+            self.publication_date = date(
+                month=publication_date["month"],
+                day=publication_date["day"],
+                year=publication_date["year"]
+            )
         if data["length"] is not None:
             length = data["length"]
             self.length = time(
