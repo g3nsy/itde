@@ -1,3 +1,4 @@
+# type: ignore
 import itde.utils as utils
 from datetime import date, time
 from typing import List, Optional, Dict
@@ -322,31 +323,13 @@ class PlaylistItem(AlbumItem):
         d = super().dump()
         d.update({
             "type": ItemType.PLAYLIST.value,
-            "views": self.views,
-            "tracks_num": self.tracks_num,
-            "release_year": self.release_year,
-            "artist_items": [a.dump() for a in self.artist_items],
-            "length": None if self.length is None else {
-                "hour": self.length.hour,
-                "minute": self.length.minute,
-                "second": self.length.second
-            }
+            "views": self.views
         })
         return d
 
     def load(self, data: Dict) -> None:
         super().load(data)
         self.views = data["views"]
-        self.tracks_num = data["tracks_num"]
-        self.release_year = data["release_year"]
-        self.artist_items = utils.get_artist_items(data["artist_items"])
-        if data["length"] is not None:
-            length = data["length"]
-            self.length = time(
-                hour=length["hour"],
-                minute=length["minute"],
-                second=length["second"]
-            )
 
 
 class SingleItem(AlbumItem):
@@ -419,7 +402,7 @@ class SongItem(Item):
     def dump(self) -> Dict:
         d = super().dump()
         d.update({
-            "type": ItemType.SINGLE.value,
+            "type": ItemType.SONG.value,
             "reproductions": self.reproductions,
             "album_item": self.album_item.dump() if self.album_item else None,
             "artist_items": [a.dump() for a in self.artist_items],

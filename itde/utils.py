@@ -1,3 +1,4 @@
+# type: ignore
 import re
 from typing import Callable, Optional, List, Dict
 from datetime import time, date
